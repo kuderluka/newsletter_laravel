@@ -31,14 +31,14 @@ class ExportNewsletterStories extends Command
     }
 
     /**
-     * Execute the console command.
+     * Executes the console command. Writes the needed data to a csv file
      */
     public function handle()
     {
         $io = new SymfonyStyle($this->input, $this->output);
 
         try {
-            $data = $this->newsletterService->exportStories();
+            $data = $this->newsletterService->exportStories($io);
             $csvData = $this->newsletterService->extractForCSV($data);
 
             $csvFilename = 'newsletter_stories';
@@ -55,8 +55,5 @@ class ExportNewsletterStories extends Command
         } catch (Exception $e) {
             $io->error($e->getMessage());
         }
-
-
-
     }
 }

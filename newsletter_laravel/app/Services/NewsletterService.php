@@ -2,13 +2,15 @@
 namespace App\Services;
 
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Client;
 use Exception;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 class NewsletterService {
 
     private Client $client;
+
+    private SymfonyStyle $io;
 
     public function __construct()
     {
@@ -16,25 +18,42 @@ class NewsletterService {
         $this->client = new Client(['base_uri' => 'https://www.pivotaltracker.com']);
     }
 
-    public function exportStories()
+    /**
+     * Fetches all stories with the state set to accepted
+     *
+     * @param SymfonyStyle $io
+     * @return array|void|null
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function exportStories(SymfonyStyle $io)
     {
+        $this->io = $io;
         try {
             $response = $this->client->request('GET', '/services/v5/projects/' . env('PIVOTAL_PROJECT_ID') . '/stories', [
                 'headers' => [
                     'X-TrackerToken' => env('PIVOTAL_API_TOKEN'),
-                    'with_state' => 'accepted'
+                ],
+                'query' => [
+                    'with_state' => 'accepted',
                 ]
             ]);
 
-            $data = $this->handleReviews(json_decode($response->getBody(), true));
+            $data = $this->filterByReviews(json_decode($response->getBody(), true));
             return $data;
 
         } catch (RequestException $e) {
-            throw new Exception("Error getting stories: " . $e->getMessage());
+            $this->io->error($e->getMessage());
         }
     }
 
-    public function handleReviews($data)
+    /**
+     * Filters the given stories so that they only include those with a certain review type set to pass
+     *
+     * @param $data
+     * @return array|void
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function filterByReviews($data)
     {
         try {
             $output = [];
@@ -56,14 +75,20 @@ class NewsletterService {
             return $output;
 
         } catch (Exception $e) {
-            throw new Exception('Error getting reviews');
+            $this->io->error($e->getMessage());
         }
     }
 
+    /**
+     * Converts the filtered stories for saving via csv
+     *
+     * @param $stories
+     * @return array
+     */
     public function extractForCSV($stories)
     {
         foreach ($stories as $story) {
-            $labelIds = array_column($story['labels'], 'id'); // Extract label IDs
+            $labelIds = array_column($story['labels'], 'id');
             $labelsString = implode(', ', $labelIds);
 
             $output[] = [
