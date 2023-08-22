@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Services\PivotalTrackerClient;
 use Exception;
 use Illuminate\Console\Command;
-use Symfony\Component\Console\Style\SymfonyStyle;
 use League\Csv\Writer;
 
 class ExportNewsletterStoriesCommand extends Command
@@ -39,6 +38,13 @@ class ExportNewsletterStoriesCommand extends Command
         }
     }
 
+    /**
+     * Writes given data to a file
+     *
+     * @param array $csvData
+     * @return void
+     * @throws \League\Csv\Exception
+     */
     public function writeToCSV(array $csvData): void
     {
         $csvFilename = 'newsletter_stories';

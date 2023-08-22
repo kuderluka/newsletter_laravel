@@ -2,7 +2,6 @@
 namespace App\Services;
 
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Client;
 use Exception;
 
@@ -32,9 +31,8 @@ class PivotalTrackerClient {
     /**
      * Fetches all stories with the state set to accepted
      *
-     * @return array|void|null
+     * @return array
      * @throws GuzzleException
-     * @throws Exception
      */
     public function exportStories(): array
     {
@@ -68,7 +66,7 @@ class PivotalTrackerClient {
     /**
      * Converts the filtered stories for saving via csv
      *
-     * @param $stories
+     * @param array $stories
      * @return array
      */
     public function extractForCSV(array $stories): array
@@ -88,6 +86,13 @@ class PivotalTrackerClient {
         return $output;
     }
 
+    /**
+     * Loads all stories of a certain project
+     *
+     * @param int $projectId
+     * @return array
+     * @throws GuzzleException
+     */
     public function loadStoriesForProject(int $projectId): array
     {
          $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id') . '/stories', [
@@ -102,6 +107,14 @@ class PivotalTrackerClient {
         return $this->filterByReviews(json_decode($response->getBody(), true));
     }
 
+    /**
+     * Loads all reviews of a certain story
+     *
+     * @param int $projectId
+     * @param int $storyId
+     * @return array
+     * @throws GuzzleException
+     */
     public function loadReviewsForStory(int $projectId, int $storyId): array
     {
         $response = $this->client->request('GET', '/services/v5/projects/' . $projectId . '/stories/' . $storyId . '/reviews', [
