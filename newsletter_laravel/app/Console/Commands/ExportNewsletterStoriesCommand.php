@@ -14,7 +14,7 @@ class ExportNewsletterStoriesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'app:export-newsletter-stories';
+    protected $signature = 'app:export-newsletter-stories-command';
 
     /**
      * The console command description.

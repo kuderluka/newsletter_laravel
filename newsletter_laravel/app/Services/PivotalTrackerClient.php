@@ -36,7 +36,7 @@ class PivotalTrackerClient {
      */
     public function exportStories(): array
     {
-        return $this->loadStoriesForProject(config('pivotal-tracker.project_id'));
+        return $this->loadStoriesForProject();
     }
 
     /**
@@ -83,6 +83,7 @@ class PivotalTrackerClient {
                 'labels' => $labelsString,
             ];
         }
+
         return $output;
     }
 
@@ -93,7 +94,7 @@ class PivotalTrackerClient {
      * @return array
      * @throws GuzzleException
      */
-    public function loadStoriesForProject(int $projectId): array
+    public function loadStoriesForProject(): array
     {
          $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id') . '/stories', [
             'headers' => [
