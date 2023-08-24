@@ -51,7 +51,7 @@ class ExportNewsletterStoriesCommand extends Command
         $csvPath = storage_path('app/' . $csvFilename);
 
         $csv = Writer::createFromPath($csvPath, 'w+');
-        $csv->insertOne(['story_id', 'story_title', 'labels']);
+        $csv->insertOne(['story_id', 'story_title', 'newsletter_message', 'labels']);
 
         foreach ($csvData as $rowData) {
             $csv->insertOne($rowData);
