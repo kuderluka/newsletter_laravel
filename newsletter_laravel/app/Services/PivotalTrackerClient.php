@@ -24,7 +24,6 @@ class PivotalTrackerClient {
      */
     public function __construct()
     {
-        //Ne dela ce imam /services/v5 tukaj namesto v requestu?
         $this->client = new Client(['base_uri' => 'https://www.pivotaltracker.com']);
     }
 
@@ -46,18 +45,15 @@ class PivotalTrackerClient {
      * @return array
      * @throws Exception|GuzzleException
      */
-    public function filterByReviews(array $data): array
+    public function filterStories(array $data): array
     {
         $output = [];
         foreach($data as $story) {
             $story['reviews'] = $this->loadReviewsForStory($story['id']);
-            $story['comments'] = $this->loadCommentsForStory($story['id']);
+            $story['newsletter_message'] = $this->loadNewsletterMessage($story['id']);
 
-            foreach ($story['reviews'] as $review) {
-                if ($review['review_type_id'] == env('PIVOTAL_REVIEW_TYPE') && $review['status'] == 'pass') {
-                    $output[] = $story;
-                    break;
-                }
+            if($this->filterByReviews($story['reviews'])) {
+                $output[] = $story;
             }
         }
 
@@ -73,7 +69,6 @@ class PivotalTrackerClient {
     public function extractForCSV(array $stories): array
     {
         $output = [];
-        dd($stories);
         foreach ($stories as $story) {
             $labelIds = array_column($story['labels'], 'id');
             $labelsString = implode(', ', $labelIds);
@@ -81,6 +76,7 @@ class PivotalTrackerClient {
             $output[] = [
                 'story_id' => $story['id'],
                 'story_title' => $story['name'],
+                'newsletter_message' => $story['newsletter_message'],
                 'labels' => $labelsString,
             ];
         }
@@ -91,7 +87,6 @@ class PivotalTrackerClient {
     /**
      * Loads all stories of a certain project
      *
-     * @param int $projectId
      * @return array
      * @throws GuzzleException
      */
@@ -106,7 +101,7 @@ class PivotalTrackerClient {
             ]
         ]);
 
-        return $this->filterByReviews(json_decode($response->getBody(), true));
+        return $this->filterStories(json_decode($response->getBody(), true));
     }
 
     /**
@@ -127,7 +122,18 @@ class PivotalTrackerClient {
         return json_decode($response->getBody(), true);
     }
 
-    private function loadCommentsForStory($storyId): array
+    private function filterByReviews(array $reviews): bool
+    {
+        foreach ($reviews as $review) {
+            if ($review['review_type_id'] == config('pivotal-tracker.review_type') && $review['status'] == 'pass') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function loadNewsletterMessage(int $storyId): string
     {
         $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id')  . '/stories/' . $storyId . '/comments', [
             'headers' => [
@@ -135,6 +141,19 @@ class PivotalTrackerClient {
             ]
         ]);
 
-        return json_decode($response->getBody(), true);
+        $comments = json_decode($response->getBody(), true);
+
+        foreach($comments as $comment) {
+            if(str_contains($comment['text'], '**Newsletter** review set to **pass**')) {
+                $exploded = preg_split('/\r\n|\r|\n/', trim($comment['text']));
+
+                if(isset($exploded[2])) {
+                    return $exploded[2];
+                }
+                return 'There is no pass message';
+            }
+        }
+
+        return '';
     }
 }
