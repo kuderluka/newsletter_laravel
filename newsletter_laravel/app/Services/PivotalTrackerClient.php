@@ -50,7 +50,8 @@ class PivotalTrackerClient {
     {
         $output = [];
         foreach($data as $story) {
-            $story['reviews'] = $this->loadReviewsForStory(config('pivotal-tracker.project_id'), $story['id']);
+            $story['reviews'] = $this->loadReviewsForStory($story['id']);
+            $story['comments'] = $this->loadCommentsForStory($story['id']);
 
             foreach ($story['reviews'] as $review) {
                 if ($review['review_type_id'] == env('PIVOTAL_REVIEW_TYPE') && $review['status'] == 'pass') {
@@ -72,7 +73,7 @@ class PivotalTrackerClient {
     public function extractForCSV(array $stories): array
     {
         $output = [];
-
+        dd($stories);
         foreach ($stories as $story) {
             $labelIds = array_column($story['labels'], 'id');
             $labelsString = implode(', ', $labelIds);
@@ -111,14 +112,24 @@ class PivotalTrackerClient {
     /**
      * Loads all reviews of a certain story
      *
-     * @param int $projectId
      * @param int $storyId
      * @return array
      * @throws GuzzleException
      */
-    public function loadReviewsForStory(int $projectId, int $storyId): array
+    public function loadReviewsForStory(int $storyId): array
     {
-        $response = $this->client->request('GET', '/services/v5/projects/' . $projectId . '/stories/' . $storyId . '/reviews', [
+        $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id') . '/stories/' . $storyId . '/reviews', [
+            'headers' => [
+                'X-TrackerToken' => config('pivotal-tracker.api_token'),
+            ]
+        ]);
+
+        return json_decode($response->getBody(), true);
+    }
+
+    private function loadCommentsForStory($storyId): array
+    {
+        $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id')  . '/stories/' . $storyId . '/comments', [
             'headers' => [
                 'X-TrackerToken' => config('pivotal-tracker.api_token'),
             ]
