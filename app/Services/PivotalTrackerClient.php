@@ -69,9 +69,14 @@ class PivotalTrackerClient {
     public function extractForCSV(array $stories): array
     {
         $output = [];
+
         foreach ($stories as $story) {
-            $labelIds = array_column($story['labels'], 'id');
+            $labelIds = array_column($story['labels'], 'name');
             $labelsString = implode(', ', $labelIds);
+
+            if($labelsString == '') {
+                $labelsString = 'There are no labels set!';
+            }
 
             $output[] = [
                 'story_id' => $story['id'],
@@ -122,6 +127,12 @@ class PivotalTrackerClient {
         return json_decode($response->getBody(), true);
     }
 
+    /**
+     * Checks if the set review type is set to pass
+     *
+     * @param array $reviews
+     * @return bool
+     */
     private function filterByReviews(array $reviews): bool
     {
         foreach ($reviews as $review) {
@@ -133,6 +144,13 @@ class PivotalTrackerClient {
         return false;
     }
 
+    /**
+     * Loads and returns the message sent when setting newsletter review to pass
+     *
+     * @param int $storyId
+     * @return string
+     * @throws GuzzleException
+     */
     private function loadNewsletterMessage(int $storyId): string
     {
         $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id')  . '/stories/' . $storyId . '/comments', [
@@ -150,10 +168,10 @@ class PivotalTrackerClient {
                 if(isset($exploded[2])) {
                     return $exploded[2];
                 }
-                return 'There is no pass message';
+                return 'There is no pass message!';
             }
         }
 
-        return '';
+        throw new \Exception('Something went wrong when loading comments');
     }
 }

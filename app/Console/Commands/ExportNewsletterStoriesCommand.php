@@ -32,7 +32,7 @@ class ExportNewsletterStoriesCommand extends Command
             $csvData = $pivotalTrackerClient->extractForCSV($pivotalTrackerClient->exportStories());
             $this->writeToCSV($csvData);
 
-            $this->line('Data exported to CSV');
+            $this->line('Data exported to CSV!');
         } catch (Exception $e) {
             $this->error($e->getMessage());
         }
