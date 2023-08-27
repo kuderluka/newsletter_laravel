@@ -1,0 +1,2 @@
+Launch using:   php artisan app:export-newsletter-stories-command
+Data is written to /storage/app/newsletter_stories
