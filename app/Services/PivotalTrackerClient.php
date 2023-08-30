@@ -74,10 +74,6 @@ class PivotalTrackerClient {
             $labelIds = array_column($story['labels'], 'name');
             $labelsString = implode(', ', $labelIds);
 
-            if($labelsString == '') {
-                $labelsString = 'There are no labels set!';
-            }
-
             $output[] = [
                 'story_id' => $story['id'],
                 'story_title' => $story['name'],
@@ -168,11 +164,9 @@ class PivotalTrackerClient {
                 if(isset($exploded[2])) {
                     return $exploded[2];
                 }
-                return 'There is no pass message!';
             }
         }
 
-        //throw new \Exception('Something went wrong when loading comments');
         return '';
     }
 }
