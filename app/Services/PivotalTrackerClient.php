@@ -172,6 +172,7 @@ class PivotalTrackerClient {
             }
         }
 
-        throw new \Exception('Something went wrong when loading comments');
+        //throw new \Exception('Something went wrong when loading comments');
+        return '';
     }
 }
