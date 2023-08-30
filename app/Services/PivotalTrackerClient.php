@@ -24,7 +24,6 @@ class PivotalTrackerClient {
      */
     public function __construct()
     {
-        //Ne dela ce imam /services/v5 tukaj namesto v requestu?
         $this->client = new Client(['base_uri' => 'https://www.pivotaltracker.com']);
     }
 
@@ -46,17 +45,15 @@ class PivotalTrackerClient {
      * @return array
      * @throws Exception|GuzzleException
      */
-    public function filterByReviews(array $data): array
+    public function filterStories(array $data): array
     {
         $output = [];
         foreach($data as $story) {
-            $story['reviews'] = $this->loadReviewsForStory(config('pivotal-tracker.project_id'), $story['id']);
+            $story['reviews'] = $this->loadReviewsForStory($story['id']);
+            $story['newsletter_message'] = $this->loadNewsletterMessage($story['id']);
 
-            foreach ($story['reviews'] as $review) {
-                if ($review['review_type_id'] == env('PIVOTAL_REVIEW_TYPE') && $review['status'] == 'pass') {
-                    $output[] = $story;
-                    break;
-                }
+            if($this->filterByReviews($story['reviews'])) {
+                $output[] = $story;
             }
         }
 
@@ -74,12 +71,17 @@ class PivotalTrackerClient {
         $output = [];
 
         foreach ($stories as $story) {
-            $labelIds = array_column($story['labels'], 'id');
+            $labelIds = array_column($story['labels'], 'name');
             $labelsString = implode(', ', $labelIds);
+
+            if($labelsString == '') {
+                $labelsString = 'There are no labels set!';
+            }
 
             $output[] = [
                 'story_id' => $story['id'],
                 'story_title' => $story['name'],
+                'newsletter_message' => $story['newsletter_message'],
                 'labels' => $labelsString,
             ];
         }
@@ -90,7 +92,6 @@ class PivotalTrackerClient {
     /**
      * Loads all stories of a certain project
      *
-     * @param int $projectId
      * @return array
      * @throws GuzzleException
      */
@@ -105,25 +106,73 @@ class PivotalTrackerClient {
             ]
         ]);
 
-        return $this->filterByReviews(json_decode($response->getBody(), true));
+        return $this->filterStories(json_decode($response->getBody(), true));
     }
 
     /**
      * Loads all reviews of a certain story
      *
-     * @param int $projectId
      * @param int $storyId
      * @return array
      * @throws GuzzleException
      */
-    public function loadReviewsForStory(int $projectId, int $storyId): array
+    public function loadReviewsForStory(int $storyId): array
     {
-        $response = $this->client->request('GET', '/services/v5/projects/' . $projectId . '/stories/' . $storyId . '/reviews', [
+        $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id') . '/stories/' . $storyId . '/reviews', [
             'headers' => [
                 'X-TrackerToken' => config('pivotal-tracker.api_token'),
             ]
         ]);
 
         return json_decode($response->getBody(), true);
+    }
+
+    /**
+     * Checks if the set review type is set to pass
+     *
+     * @param array $reviews
+     * @return bool
+     */
+    private function filterByReviews(array $reviews): bool
+    {
+        foreach ($reviews as $review) {
+            if ($review['review_type_id'] == config('pivotal-tracker.review_type') && $review['status'] == 'pass') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Loads and returns the message sent when setting newsletter review to pass
+     *
+     * @param int $storyId
+     * @return string
+     * @throws GuzzleException
+     */
+    private function loadNewsletterMessage(int $storyId): string
+    {
+        $response = $this->client->request('GET', '/services/v5/projects/' . config('pivotal-tracker.project_id')  . '/stories/' . $storyId . '/comments', [
+            'headers' => [
+                'X-TrackerToken' => config('pivotal-tracker.api_token'),
+            ]
+        ]);
+
+        $comments = json_decode($response->getBody(), true);
+
+        foreach($comments as $comment) {
+            if(str_contains($comment['text'], '**Newsletter** review set to **pass**')) {
+                $exploded = preg_split('/\r\n|\r|\n/', trim($comment['text']));
+
+                if(isset($exploded[2])) {
+                    return $exploded[2];
+                }
+                return 'There is no pass message!';
+            }
+        }
+
+        //throw new \Exception('Something went wrong when loading comments');
+        return '';
     }
 }

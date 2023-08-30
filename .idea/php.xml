@@ -122,6 +122,7 @@
       <path value="$PROJECT_DIR$/newsletter_laravel/vendor/psr/http-client" />
       <path value="$PROJECT_DIR$/newsletter_laravel/vendor/psr/event-dispatcher" />
       <path value="$PROJECT_DIR$/newsletter_laravel/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/newsletter_laravel/vendor/league/csv" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />
