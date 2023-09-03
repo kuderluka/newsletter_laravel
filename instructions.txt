@@ -1,2 +1,6 @@
 Launch using:   php artisan app:export-newsletter-stories-command
 Data is written to /storage/app/newsletter_stories
+
+PIVOTAL_API_TOKEN=627d82676e1f0a342fb974949da5599c
+PIVOTAL_PROJECT_ID=2665689
+PIVOTAL_REVIEW_TYPE=6614426
