@@ -43,7 +43,6 @@ class PivotalTrackerClient {
      *
      * @param array $data
      * @return array
-     * @throws Exception|GuzzleException
      */
     public function filterStories(array $data): array
     {
@@ -89,7 +88,6 @@ class PivotalTrackerClient {
      * Loads all stories of a certain project
      *
      * @return array
-     * @throws GuzzleException
      */
     public function loadStoriesForProject(): array
     {
@@ -110,7 +108,6 @@ class PivotalTrackerClient {
      *
      * @param int $storyId
      * @return array
-     * @throws GuzzleException
      */
     public function loadReviewsForStory(int $storyId): array
     {
@@ -145,7 +142,6 @@ class PivotalTrackerClient {
      *
      * @param int $storyId
      * @return string
-     * @throws GuzzleException
      */
     private function loadNewsletterMessage(int $storyId): string
     {
@@ -159,10 +155,10 @@ class PivotalTrackerClient {
 
         foreach($comments as $comment) {
             if(str_contains($comment['text'], '**Newsletter** review set to **pass**')) {
-                $exploded = preg_split('/\r\n|\r|\n/', trim($comment['text']));
+                $exploded = preg_split('/\*\*Newsletter\*\* review set to \*\*pass\*\*/', trim($comment['text']));
 
-                if(isset($exploded[2])) {
-                    return $exploded[2];
+                if(isset($exploded[1])) {
+                    return trim($exploded[1]);
                 }
             }
         }
